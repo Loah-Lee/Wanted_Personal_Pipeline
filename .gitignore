@@ -166,3 +166,11 @@ __marimo__/
 
 # Abstra
 .abstra/
+
+# Project data (do not commit)
+data/
+data/**
+
+# Allow keeping empty folders (optional)
+!.gitkeep
+
