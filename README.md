@@ -1,109 +1,86 @@
-# Wanted Job Scraper (Study Project)
+# Job Posting Understanding Pipeline (Personal)
 
-## 📌 프로젝트 개요
-본 프로젝트는 **구직 목적 + 웹 스크래핑 학습**을 위해 진행한 개인 학습 프로젝트입니다.
+원티드(Wanted) 등 구직 사이트의 공고를 **필요할 때 실행해서 최신 스냅샷으로 수집**하고,  
+내 조건에 맞는 공고를 **필터링/정리**한 뒤 (추후) **오픈소스 LLM으로 요약/질의응답**까지 연결하는 개인 구직 자동화 프로젝트입니다.
 
-- 채용 플랫폼 **원티드(Wanted)**의 채용 공고 데이터를
-  - **공식 OpenAPI 방식**
-  - **HTML 스크래핑 방식**
-  두 가지로 수집하며,
-- 두 접근 방식의 **안정성, 한계, 학습 포인트**를 비교하는 것을 목표로 합니다.
-
-> ⚠️ 본 프로젝트는 개인 학습 및 구직 목적이며,  
-> 수집한 데이터는 재배포·상업적 활용을 하지 않습니다.
+> 목표는 “스크래핑 자체”가 아니라, 공고 내용을 모델이 이해할 수 있게 만들고  
+> 사용자가 원하는 조건에 맞게 정리/요약/응답하는 파이프라인을 만드는 것입니다.
 
 ---
 
-## 🎯 목표
-- 실제 구직에 활용 가능한 채용 공고 데이터 정리
-- OpenAPI 기반 데이터 수집 경험
-- HTML 기반 웹 스크래핑의 구조적 이해
-- 두 방식의 차이를 직접 비교하며 장단점 체득
+## What I learned (핵심 배운 점)
+
+- SPA(싱글 페이지 앱) 환경에서는 `requests`나 단순 HTML 저장으로는 공고 DOM이 비어 `N=0`이 될 수 있음  
+- 따라서 **렌더링 이후 DOM을 가져오는 수집 방식(예: Playwright)**이 필요함  
+- 데이터는 커밋하지 않고(약관/저작권/개인정보 리스크 최소화), 코드/구조/로그 중심으로 관리함
 
 ---
 
-## 🛠 사용 기술
-- Python 3.10
-- requests
-- BeautifulSoup4
-- SQLite
-- Jupyter Notebook (분석용)
+## Project Structure
 
----
-
-## 📂 프로젝트 구조
-```
-wanted-job-scraper/
-├── api/
-│   └── fetch_jobs_api.py        # Wanted OpenAPI 기반 수집
-├── html/
-│   └── scrape_list_html.py      # HTML 스크래핑 (검색 결과 리스트)
-├── normalize/
-│   └── clean_jobs.py            # 데이터 정규화
-├── db/
-│   └── jobs.sqlite              # 수집 데이터 저장
-├── analysis/
-│   └── keyword_analysis.ipynb   # 기술 스택/키워드 분석
-└── README.md
+```text
+Wanted_Job_Scraper/
+├─ src/
+│  ├─ collect/        # (예정) Playwright 등으로 공고 수집
+│  ├─ parse/          # (예정) raw → structured 변환
+│  ├─ query/          # (예정) 조건 기반 필터링/정렬
+│  └─ nlp/            # (예정) 요약/질의응답(오픈소스 LLM)
+├─ config/
+│  ├─ criteria.yaml   # (예정) 내 조건/필터 규칙
+│  └─ logging.yaml    # (선택) 로깅 설정
+├─ data/              # ❗커밋하지 않음(.gitignore)
+│  ├─ raw/            # 수집 원본(임시)
+│  ├─ snapshots/      # 실행 시점별 스냅샷(JSONL)
+│  └─ outputs/        # 필터 결과/리포트
+└─ docs/
+   └─ devlog/         # 시행착오/배운 점 기록
 ```
 
 ---
 
-## 🔌 수집 방식 1: Wanted OpenAPI
-### 특징
-- 공식 제공 API 사용
-- 안정적인 JSON 구조
-- 구조 변경에 강함
-- 실제 서비스/현업 환경에 가까움
+## Quick Start
 
-### 학습 포인트
-- REST API 구조 이해
-- Pagination 처리
-- JSON 데이터 정규화
-- Rate limit 고려한 요청 설계
+### 1) 환경변수 설정
+- `.env`는 로컬에서만 사용하고 Git에 올리지 않습니다.
+- `.env.example`을 복사해서 `.env`를 만드세요.
 
----
+```bash
+cp .env.example .env
+```
 
-## 🕸 수집 방식 2: HTML Scraping
-### 특징
-- 검색 결과 페이지의 공개 HTML만 수집
-- 로그인 필요 없는 범위에서 제한적으로 사용
-- DOM 구조 변경에 취약
+### 2) (현재) HTML snippet 파싱 테스트
+> 초기 실험 단계: 렌더링된 DOM snippet을 저장해 파싱했습니다.  
+> 이후 Playwright 기반 수집으로 교체 예정입니다.
 
-### 학습 포인트
-- HTML / DOM 구조 분석
-- CSS Selector 활용
-- 정적 페이지 vs 동적 페이지 구분
-- 웹 스크래핑의 구조적 한계 체감
+```bash
+python src/html/parse_wanted_list.py
+```
+
+출력 예:
+```text
+Saved N jobs to data/processed/jobs.jsonl
+```
 
 ---
 
-## ⚖ OpenAPI vs HTML Scraping 비교
-| 항목 | OpenAPI | HTML Scraping |
-|----|----|----|
-| 안정성 | 높음 | 낮음 |
-| 구조 변경 영향 | 적음 | 큼 |
-| 학습 난이도 | 중 | 중~상 |
-| 실무 활용도 | 매우 높음 | 보조적 |
+## Data Policy (중요)
+
+- `data/**` 아래의 원본 HTML/스냅샷/결과물은 **커밋하지 않습니다.**
+- 이 레포는 **개인 학습 및 개인 구직 자동화 목적**으로 운영합니다.
+- 서비스 운영/재배포 목적이 아닙니다.
 
 ---
 
-## 📝 한계 및 주의사항
-- 본 프로젝트는 **학습 목적**으로만 진행됨
-- 대량 수집, 빈번한 요청은 지양
-- 사이트 정책 및 robots.txt 범위를 존중
+## Roadmap
+
+- [ ] Playwright 수집(렌더링 이후 DOM 기반)으로 교체  
+- [ ] 스냅샷 저장: `data/snapshots/YYYY-MM-DD_wanted.jsonl`  
+- [ ] 조건 필터링(`config/criteria.yaml`) + 결과 리포트 생성  
+- [ ] 오픈소스 LLM 기반 요약/질의응답(로컬/경량 우선)
 
 ---
 
-## 🔍 느낀 점
-- OpenAPI는 “실전용”
-- HTML 스크래핑은 “구조 이해용”
-- 두 방식을 함께 써보며 **왜 현업에서 API를 선호하는지**를 체감할 수 있었음
+## Notes
 
----
-
-## 📅 향후 계획
-- 키워드 기반 구직 알림 자동화
-- 기술 스택 트렌드 분석 고도화
-- 다른 채용 플랫폼과 구조 비교
-
+본 프로젝트는 웹사이트의 이용약관/robots 정책을 존중하며,  
+과도한 요청이나 데이터 재배포를 지양합니다.
